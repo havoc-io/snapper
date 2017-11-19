@@ -24,6 +24,10 @@ const (
 	// to use a path as a base for snapshots.
 	rsyncBaseFlagFormat = "--link-dest=%s"
 
+	// rsyncExcludeFlagFormat is a format string for the flag to use to tell
+	// rsync to exclude a path.
+	rsyncExcludeFlagFormat = "--exclude=%s"
+
 	// snapshotPermissions are the permissions to use for the snapshots root and
 	// individual snapshot roots.
 	snapshotPermissions = 0700
@@ -33,26 +37,26 @@ const (
 	latestSnapshotLinkName = "Latest"
 )
 
-var usage = `usage: snapper [-h|--help] [-i=<ignored-path>] <root> <snapshots>`
+var usage = `usage: snapper [-h|--help] [-exclude=<excluded-path>] <root> <snapshots>`
 
-type ignores []string
+type excludes []string
 
-func (i *ignores) String() string {
-	return "ignore paths"
+func (e *excludes) String() string {
+	return "excluded paths"
 }
 
-func (i *ignores) Set(value string) error {
-	*i = append(*i, value)
+func (e *excludes) Set(value string) error {
+	*e = append(*e, value)
 	return nil
 }
 
 func main() {
 	// Parse command line arguments.
-	var ignores ignores
+	var excludes excludes
 	flags := flag.NewFlagSet("snapper", flag.ContinueOnError)
 	flags.Usage = func() {}
 	flags.SetOutput(ioutil.Discard)
-	flags.Var(&ignores, "ignore", "adds a path (relative to root) to be ignored")
+	flags.Var(&excludes, "exclude", "adds a path (relative to root) to be exclude")
 	if err := flags.Parse(os.Args[1:]); err == flag.ErrHelp {
 		fmt.Println(usage)
 		os.Exit(0)
@@ -100,6 +104,11 @@ func main() {
 	} else if !os.IsNotExist(err) {
 		fmt.Fprintln(os.Stderr, "error: unable to inspect latest backup link path:", err)
 		os.Exit(1)
+	}
+
+	// Add excluded paths.
+	for _, p := range excludes {
+		rsyncArguments = append(rsyncArguments, fmt.Sprintf(rsyncExcludeFlagFormat, p))
 	}
 
 	// Add the root path, but ensure that it has a trailing slash, because we
