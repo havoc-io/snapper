@@ -14,11 +14,18 @@ const (
 	// rsyncCommand is the command to use to invoke rsync.
 	rsyncCommand = "rsync"
 
-	// rsyncFlags are the behavioral flags to pass to rsync. The "-a" flag is
-	// the standard archiving configuration (see "man rsync" for more details),
-	// the "-P" flag displays, and the "-h" flag shows numbers in human-readable
-	// format.
-	rsyncFlags = "-aPh"
+	// rsyncArchiveFlags are the behavioral flags to pass to rsync for archiving
+	// behavior. The "-a" flag is the standard archiving configuration (see
+	// "man rsync" for more details), the "-P" flag displays, and the "-h" flag
+	// shows numbers in human-readable format.
+	rsyncArchiveFlags = "-aPh"
+
+	// rsyncDisableSpecials is the flag to disable copying special files (e.g.
+	// sockets and FIFOs).
+	rsyncDisableSpecials = "--no-specials"
+
+	// rsyncDisableDevices is the flag to disable copying device files.
+	rsyncDisableDevices = "--no-devices"
 
 	// rsyncBaseFlagFormat is a format string for the flag to use to tell rsync
 	// to use a path as a base for snapshots.
@@ -88,7 +95,7 @@ func main() {
 	}
 
 	// Create base rsync arguments.
-	rsyncArguments := []string{rsyncFlags}
+	rsyncArguments := []string{rsyncArchiveFlags, rsyncDisableSpecials, rsyncDisableDevices}
 
 	// Check if there's already an existing backup. If so, tell rsync to use it
 	// as a hardlink base.
